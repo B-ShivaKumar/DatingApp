@@ -1,3 +1,7 @@
+using System.Xml.Schema;
+using System.Net.Mime;
+using System.Text;
+using System.ComponentModel.Design;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +15,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using API.Data;
+using API.Extensions;
+using API.Interfaces;
+using API.Services;
 using Microsoft.EntityFrameworkCore;
+//using Microsoft.AspNetCore.Authentication.JwtBearer;
 namespace API
 {
     public class Startup
@@ -28,16 +38,16 @@ namespace API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DataContext>(options=>{
-                options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
-            });
-
+            
+            services.AddApplicationServices(_config);
             services.AddControllers();
              services.AddSwaggerGen(c =>
              {
                  c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
              });
             services.AddCors();
+            services.AddIdentityServices(_config);
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -53,9 +63,9 @@ namespace API
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+             app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200"));
+            app.UseAuthentication();
             app.UseAuthorization();
-            app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200"));
 
 
             app.UseEndpoints(endpoints =>
